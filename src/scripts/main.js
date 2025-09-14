@@ -67,19 +67,7 @@ function displayCells(board) {
   }
 }
 
-function compareFieldRows(newState, startState) {
-  for (let c = 0; c < newState.length; c++) {
-    if (newState[c] !== startState[c]) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 function compareFields(startField, newField) {
-  let count = 0;
-
   for (let r = 0; r < newField.length; r++) {
     for (let c = 0; c < newField[r].length; c++) {
       if (startField[r][c] === 2048) {
@@ -90,36 +78,18 @@ function compareFields(startField, newField) {
 
   for (let r = 0; r < newField.length; r++) {
     for (let c = 0; c < newField[r].length; c++) {
-      if (newField[r][c] === 0) {
-        count++;
-      }
-
-      if (newField[r][c] === 2048) {
-        return 'win';
-      }
-
       if (startField[r][c] !== newField[r][c]) {
         return false;
       }
     }
   }
 
-  if (count === 0) {
-    return 'lose';
-  }
-
   return true;
 }
 
-function addNewTwoOrCell(board, startState) {
+function addNewTwoOrFour(board, startState) {
   if (compareFields(startState, board) === false) {
     setTwoOrFour(board);
-  }
-
-  if (compareFields(board, startState) === 'lose') {
-    const loseMessage = document.querySelector('.message-lose');
-
-    loseMessage.classList.remove('hidden');
   }
 
   if (compareFields(board, startState) === 'win') {
@@ -127,6 +97,218 @@ function addNewTwoOrCell(board, startState) {
 
     winMessage.classList.remove('hidden');
   }
+}
+
+function moveLeftHelper(board, boardScore) {
+  const result = [];
+  const boardCopy = board.map((row) => [...row]);
+  const startBoardState = board.map((row) => [...row]);
+  let currBoardScore = boardScore;
+
+  let count = 0;
+
+  for (const row of boardCopy) {
+    let filtered = row.filter((x) => x !== 0);
+
+    for (let i = 0; i < filtered.length; i++) {
+      if (filtered[i + 1] === filtered[i]) {
+        filtered[i] = filtered[i] * 2;
+        filtered[i + 1] = 0;
+
+        currBoardScore += filtered[i];
+      } else if (filtered[i + 1] === 0 && filtered[i] !== 0) {
+        filtered[i + 1] = filtered[i];
+      }
+    }
+    filtered = filtered.filter((x) => x !== 0);
+
+    for (let i = 0; i <= 3; i++) {
+      if (!filtered[i]) {
+        filtered.push(0);
+      }
+    }
+
+    result.push(filtered);
+
+    boardCopy[count] = result[count];
+
+    count++;
+  }
+
+  const comparingStartToCurrBoard = compareFields(startBoardState, boardCopy);
+
+  return [
+    boardCopy,
+    startBoardState,
+    currBoardScore,
+    comparingStartToCurrBoard,
+  ];
+}
+
+//
+//
+//
+//
+//
+
+function moveRightHelper(board, boardScore) {
+  const result = [];
+  const boardCopy = board.map((row) => [...row]);
+  const startBoardState = board.map((row) => [...row]);
+  let currBoardScore = boardScore;
+
+  let count = 0;
+
+  for (const row of boardCopy) {
+    let filtered = row.filter((x) => x !== 0);
+
+    filtered.reverse();
+
+    for (let i = 0; i < filtered.length; i++) {
+      if (filtered[i + 1] === filtered[i]) {
+        filtered[i] = filtered[i] * 2;
+        filtered[i + 1] = 0;
+
+        currBoardScore += filtered[i];
+      } else if (filtered[i + 1] === 0 && filtered[i] !== 0) {
+        filtered[i + 1] = filtered[i];
+      }
+    }
+    filtered = filtered.filter((x) => x !== 0);
+
+    for (let i = 0; i <= 3; i++) {
+      if (!filtered[i]) {
+        filtered.push(0);
+      }
+    }
+
+    filtered.reverse();
+
+    result.push(filtered);
+
+    boardCopy[count] = result[count];
+
+    count++;
+  }
+
+  const comparingStartToCurrBoard = compareFields(startBoardState, boardCopy);
+
+  return [
+    boardCopy,
+    startBoardState,
+    currBoardScore,
+    comparingStartToCurrBoard,
+  ];
+}
+
+//
+//
+//
+//
+//
+
+function moveDownHelper(board, boardScore) {
+  let currBoardScore = boardScore;
+  const boardCopy = board.map((row) => [...row]);
+  const startBoardState = board.map((row) => [...row]);
+
+  for (let c = 0; c < boardCopy[0].length; c++) {
+    const startRowState = [];
+
+    for (let r = 0; r < boardCopy.length; r++) {
+      startRowState.push(boardCopy[r][c]);
+    }
+
+    let filtered = startRowState.filter((x) => x !== 0);
+
+    for (let cell = 0; cell < filtered.length; cell++) {
+      if (filtered[cell + 1] === filtered[cell]) {
+        filtered[cell] = filtered[cell] * 2;
+        filtered[cell + 1] = 0;
+
+        currBoardScore += filtered[cell];
+      } else if (filtered[cell + 1] === 0 && filtered[cell] !== 0) {
+        filtered[cell + 1] = filtered[cell];
+      }
+    }
+
+    filtered = filtered.filter((x) => x !== 0);
+
+    for (let i = 0; i <= 3; i++) {
+      if (filtered.length < 4) {
+        filtered.unshift(0);
+      } else {
+        break;
+      }
+    }
+
+    for (let row = 0; row < boardCopy.length; row++) {
+      boardCopy[row][c] = filtered[row];
+    }
+  }
+
+  const comparingStartToCurrBoard = compareFields(startBoardState, boardCopy);
+
+  return [
+    boardCopy,
+    startBoardState,
+    currBoardScore,
+    comparingStartToCurrBoard,
+  ];
+}
+
+function moveUpHelper(board, boardScore) {
+  let currBoardScore = boardScore;
+  const boardCopy = board.map((row) => [...row]);
+  const startBoardState = board.map((row) => [...row]);
+
+  for (let c = 0; c < boardCopy[0].length; c++) {
+    const startRowState = [];
+
+    for (let r = 0; r < boardCopy.length; r++) {
+      startRowState.push(boardCopy[r][c]);
+    }
+
+    let filtered = startRowState.filter((x) => x !== 0);
+
+    filtered.reverse();
+
+    for (let cell = 0; cell < filtered.length; cell++) {
+      if (filtered[cell + 1] === filtered[cell]) {
+        filtered[cell] = filtered[cell] * 2;
+        filtered[cell + 1] = 0;
+
+        currBoardScore += filtered[cell];
+      } else if (filtered[cell + 1] === 0 && filtered[cell] !== 0) {
+        filtered[cell + 1] = filtered[cell];
+      }
+    }
+
+    filtered = filtered.filter((x) => x !== 0);
+
+    for (let i = 0; i <= 3; i++) {
+      if (filtered.length < 4) {
+        filtered.unshift(0);
+      } else {
+        break;
+      }
+    }
+
+    filtered.reverse();
+
+    for (let row = 0; row < boardCopy.length; row++) {
+      boardCopy[row][c] = filtered[row];
+    }
+  }
+
+  const comparingStartToCurrBoard = compareFields(startBoardState, boardCopy);
+
+  return [
+    boardCopy,
+    startBoardState,
+    currBoardScore,
+    comparingStartToCurrBoard,
+  ];
 }
 
 class Game {
@@ -172,52 +354,35 @@ class Game {
   moveLeft() {
     document.addEventListener('keydown', (ev) => {
       if (ev.key === 'ArrowLeft') {
-        const result = [];
-        const startBoardState = [...this.board];
+        const board = moveLeftHelper(this.board, this.score)[0];
+        const startBoard = moveLeftHelper(this.board, this.score)[1];
+        const score = moveLeftHelper(this.board, this.score)[2];
 
-        let count = 0;
+        const mLeftRes = moveLeftHelper(this.board, this.score)[3];
+        const mRightRes = moveRightHelper(this.board, this.score)[3];
+        const mDownRes = moveDownHelper(this.board, this.score)[3];
+        const mUpRes = moveUpHelper(this.board, this.score)[3];
 
-        for (const row of this.board) {
-          const startScore = this.score;
-          const startState = this.board[count];
-          let filtered = row.filter((x) => x !== 0);
+        const loseMessage = document.querySelector('.message-lose');
 
-          for (let i = 0; i < filtered.length; i++) {
-            if (filtered[i + 1] === filtered[i]) {
-              filtered[i] = filtered[i] * 2;
-              filtered[i + 1] = 0;
-
-              this.score += filtered[i];
-            } else if (filtered[i + 1] === 0 && filtered[i] !== 0) {
-              filtered[i + 1] = filtered[i];
-            }
-          }
-          filtered = filtered.filter((x) => x !== 0);
-
-          for (let i = 0; i <= 3; i++) {
-            if (!filtered[i]) {
-              filtered.push(0);
-            }
-          }
-
-          result.push(filtered);
-
-          if (compareFieldRows(result[count], startState) === true) {
-            this.score = startScore;
-          }
-
-          this.board[count] = result[count];
-
-          count++;
+        if (
+          mLeftRes === true &&
+          mRightRes === true &&
+          mDownRes === true &&
+          mUpRes === true
+        ) {
+          loseMessage.classList.remove('hidden');
         }
 
-        addNewTwoOrCell(this.board, startBoardState);
+        const scoreDOM = document.querySelector('.game-score');
+
+        scoreDOM.textContent = score;
+
+        addNewTwoOrFour(board, startBoard);
+        this.board = board;
+        this.score = score;
 
         displayCells(this.board);
-
-        const score = document.querySelector('.game-score');
-
-        score.textContent = this.score;
       }
     });
   }
@@ -225,56 +390,35 @@ class Game {
   moveRight() {
     document.addEventListener('keydown', (ev) => {
       if (ev.key === 'ArrowRight') {
-        const result = [];
-        const startBoardState = [...this.board];
+        const board = moveRightHelper(this.board, this.score)[0];
+        const startBoard = moveRightHelper(this.board, this.score)[1];
+        const score = moveRightHelper(this.board, this.score)[2];
 
-        let count = 0;
+        const mLeftRes = moveLeftHelper(this.board, this.score)[3];
+        const mRightRes = moveRightHelper(this.board, this.score)[3];
+        const mDownRes = moveDownHelper(this.board, this.score)[3];
+        const mUpRes = moveUpHelper(this.board, this.score)[3];
 
-        for (const row of this.board) {
-          const startScore = this.score;
-          const startState = this.board[count];
-          let filtered = row.filter((x) => x !== 0);
+        const loseMessage = document.querySelector('.message-lose');
 
-          filtered = filtered.reverse();
-
-          for (let i = 0; i < filtered.length; i++) {
-            if (filtered[i + 1] === filtered[i]) {
-              filtered[i] = filtered[i] * 2;
-              filtered[i + 1] = 0;
-
-              this.score += filtered[i];
-            } else if (filtered[i + 1] === 0 && filtered[i] !== 0) {
-              filtered[i + 1] = filtered[i];
-            }
-          }
-          filtered = filtered.filter((x) => x !== 0);
-
-          for (let i = 0; i <= 3; i++) {
-            if (!filtered[i]) {
-              filtered.push(0);
-            }
-          }
-
-          filtered.reverse();
-
-          result.push(filtered);
-
-          if (compareFieldRows(result[count], startState) === true) {
-            this.score = startScore;
-          }
-
-          this.board[count] = result[count];
-
-          count++;
+        if (
+          mLeftRes === true &&
+          mRightRes === true &&
+          mDownRes === true &&
+          mUpRes === true
+        ) {
+          loseMessage.classList.remove('hidden');
         }
 
-        addNewTwoOrCell(this.board, startBoardState);
+        const scoreDOM = document.querySelector('.game-score');
+
+        scoreDOM.textContent = score;
+
+        addNewTwoOrFour(board, startBoard);
+        this.board = board;
+        this.score = score;
 
         displayCells(this.board);
-
-        const score = document.querySelector('.game-score');
-
-        score.textContent = this.score;
       }
     });
   }
@@ -282,51 +426,35 @@ class Game {
   moveDown() {
     document.addEventListener('keydown', (ev) => {
       if (ev.key === 'ArrowDown') {
-        // const result = [];
-        const startBoardState = this.board.map((row) => [...row]);
+        const board = moveDownHelper(this.board, this.score)[0];
+        const startBoard = moveDownHelper(this.board, this.score)[1];
+        const score = moveDownHelper(this.board, this.score)[2];
 
-        for (let c = 0; c < this.board[0].length; c++) {
-          const startRowState = [];
+        const mLeftRes = moveLeftHelper(this.board, this.score)[3];
+        const mRightRes = moveRightHelper(this.board, this.score)[3];
+        const mDownRes = moveDownHelper(this.board, this.score)[3];
+        const mUpRes = moveUpHelper(this.board, this.score)[3];
 
-          for (let r = 0; r < this.board.length; r++) {
-            startRowState.push(this.board[r][c]);
-          }
+        const loseMessage = document.querySelector('.message-lose');
 
-          let filtered = startRowState.filter((x) => x !== 0);
-
-          for (let cell = 0; cell < filtered.length; cell++) {
-            if (filtered[cell + 1] === filtered[cell]) {
-              filtered[cell] = filtered[cell] * 2;
-              filtered[cell + 1] = 0;
-
-              this.score += filtered[cell];
-            } else if (filtered[cell + 1] === 0 && filtered[cell] !== 0) {
-              filtered[cell + 1] = filtered[cell];
-            }
-          }
-
-          filtered = filtered.filter((x) => x !== 0);
-
-          for (let i = 0; i <= 3; i++) {
-            if (filtered.length < 4) {
-              filtered.unshift(0);
-            } else {
-              break;
-            }
-          }
-
-          for (let row = 0; row < this.board.length; row++) {
-            this.board[row][c] = filtered[row];
-          }
+        if (
+          mLeftRes === true &&
+          mRightRes === true &&
+          mDownRes === true &&
+          mUpRes === true
+        ) {
+          loseMessage.classList.remove('hidden');
         }
 
-        addNewTwoOrCell(this.board, startBoardState);
+        const scoreDOM = document.querySelector('.game-score');
+
+        scoreDOM.textContent = score;
+
+        addNewTwoOrFour(board, startBoard);
+        this.board = board;
+        this.score = score;
 
         displayCells(this.board);
-
-        const score = document.querySelector('.game-score');
-
-        score.textContent = this.score;
       }
     });
   }
@@ -334,55 +462,35 @@ class Game {
   moveUp() {
     document.addEventListener('keydown', (ev) => {
       if (ev.key === 'ArrowUp') {
-        const startBoardState = this.board.map((row) => [...row]);
+        const board = moveUpHelper(this.board, this.score)[0];
+        const startBoard = moveUpHelper(this.board, this.score)[1];
+        const score = moveUpHelper(this.board, this.score)[2];
 
-        for (let c = 0; c < this.board[0].length; c++) {
-          const startRowState = [];
+        const mLeftRes = moveLeftHelper(this.board, this.score)[3];
+        const mRightRes = moveRightHelper(this.board, this.score)[3];
+        const mDownRes = moveDownHelper(this.board, this.score)[3];
+        const mUpRes = moveUpHelper(this.board, this.score)[3];
 
-          for (let r = 0; r < this.board.length; r++) {
-            startRowState.push(this.board[r][c]);
-          }
+        const loseMessage = document.querySelector('.message-lose');
 
-          let filtered = startRowState.filter((x) => x !== 0);
-
-          filtered.reverse();
-
-          for (let cell = 0; cell < filtered.length; cell++) {
-            if (filtered[cell + 1] === filtered[cell]) {
-              filtered[cell] = filtered[cell] * 2;
-              filtered[cell + 1] = 0;
-
-              this.score += filtered[cell];
-            } else if (filtered[cell + 1] === 0 && filtered[cell] !== 0) {
-              filtered[cell + 1] = filtered[cell];
-            }
-          }
-
-          filtered = filtered.filter((x) => x !== 0);
-
-          for (let i = 0; i <= 3; i++) {
-            if (filtered.length < 4) {
-              filtered.unshift(0);
-            } else {
-              break;
-            }
-          }
-
-          filtered.reverse();
-
-          for (let row = 0; row < this.board.length; row++) {
-            this.board[row][c] = filtered[row];
-          }
+        if (
+          mLeftRes === true &&
+          mRightRes === true &&
+          mDownRes === true &&
+          mUpRes === true
+        ) {
+          loseMessage.classList.remove('hidden');
         }
 
-        addNewTwoOrCell(this.board, startBoardState);
-        // console.log(startBoardState);
+        const scoreDOM = document.querySelector('.game-score');
+
+        scoreDOM.textContent = score;
+
+        addNewTwoOrFour(board, startBoard);
+        this.board = board;
+        this.score = score;
 
         displayCells(this.board);
-
-        const score = document.querySelector('.game-score');
-
-        score.textContent = this.score;
       }
     });
   }
